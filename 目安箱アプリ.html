@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>目安箱マイク - 2タップ爆速意見投稿</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      touch-action: manipulation;
+    }
+    .recording-pulse {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased flex flex-col justify-between pb-16 md:pb-0">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg">
+          🎙️
+        </div>
+        <div>
+          <h1 class="font-bold text-base leading-tight">目安箱マイク</h1>
+          <p class="text-[10px] text-slate-400">全員共有定型文・スプレッドシート自動連動</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button id="togglePwaBtn" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <span>📲 アプリ化</span>
+        </button>
+        <button id="toggleReadmeBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1 transition">
+          <i class="fa-solid fa-wrench text-amber-400"></i>
+          <span>設定</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Page Switcher Tabs -->
+    <div class="bg-slate-800 border-t border-slate-700/60">
+      <div class="max-w-md mx-auto flex">
+        <button id="navTabPost" class="flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>1. 投稿</span>
+        </button>
+        <button id="navTabSheet" class="flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition">
+          <i class="fa-solid fa-table"></i>
+          <span>2. ログ</span>
+          <span id="sheetBadgeCount" class="bg-indigo-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-normal">1</span>
+        </button>
+        <button id="navTabPresets" class="flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition">
+          <i class="fa-solid fa-sliders"></i>
+          <span>3. 定型文管理</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto w-full px-3 py-4 flex-1 flex flex-col gap-4">
+
+    <!-- PAGE 1: POST PAGE VIEW -->
+    <div id="pagePost" class="flex flex-col gap-4">
+
+      <!-- Step / User Info Banner -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2 flex-1">
+            <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">投稿者名:</span>
+            <input type="text" id="userNameInput" placeholder="例: 職員A (端末ごとに個別保存)" 
+              class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+            自動補完
+          </span>
+        </div>
+        <!-- GAS URL Config -->
+        <details class="text-[11px] text-slate-500">
+          <summary class="cursor-pointer hover:text-indigo-600 font-medium flex items-center gap-1">
+            <i class="fa-solid fa-link text-indigo-500"></i> 本番スプレッドシート連携 (GAS WebアプリURL)
+          </summary>
+          <div class="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-1.5">
+            <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec"
+              class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-slate-400">※末尾が /exec のURLを設定</span>
+              <button id="testGasConnectionBtn" type="button" class="text-indigo-600 hover:underline font-bold">
+                <i class="fa-solid fa-plug mr-0.5"></i>接続チェック
+              </button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Quick Category Selection -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80">
+        <label class="block text-xs font-bold text-slate-600 mb-2">1. 種類を選ぶ (1タップ)</label>
+        <div class="grid grid-cols-4 gap-1.5" id="categoryContainer">
+          <button type="button" data-cat="困りごと" class="cat-btn active bg-rose-50 border-2 border-rose-500 text-rose-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+            <span class="text-base">🚨</span>
+            <span>困りごと</span>
+          </button>
+          <button type="button" data-cat="アイデア・提案" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+            <span class="text-base">💡</span>
+            <span>提案</span>
+          </button>
+          <button type="button" data-cat="連絡・メモ" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+            <span class="text-base">📝</span>
+            <span>連絡</span>
+          </button>
+          <button type="button" data-cat="未分類" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+            <span class="text-base">💬</span>
+            <span>その他</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex-1 flex flex-col justify-between gap-4">
+        
+        <!-- Input Mode Switcher -->
+        <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+          <button id="modeVoiceBtn" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition">
+            <i class="fa-solid fa-microphone mr-1"></i>音声入力
+          </button>
+          <button id="modePresetBtn" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition">
+            <i class="fa-solid fa-bolt mr-1"></i>定型文
+          </button>
+          <button id="modeTextBtn" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition">
+            <i class="fa-solid fa-keyboard mr-1"></i>手入力
+          </button>
+        </div>
+
+        <!-- VOICE INPUT SECTION -->
+        <div id="sectionVoice" class="flex-1 flex flex-col items-center justify-center gap-3 py-2">
+          
+          <button id="micMainBtn" class="relative group w-28 h-28 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-600 text-white flex flex-col items-center justify-center shadow-lg hover:shadow-indigo-500/30 transition transform active:scale-90">
+            <i class="fa-solid fa-microphone text-3xl mb-1"></i>
+            <span id="micBtnText" class="text-xs font-bold">話す (タップ)</span>
+          </button>
+
+          <p id="speechStatus" class="text-xs font-medium text-slate-500 text-center min-h-[1.5rem]">
+            ボタンを押して喋り始めてください
+          </p>
+
+          <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[80px] max-h-[120px] overflow-y-auto text-sm text-slate-700 leading-relaxed">
+            <span id="transcriptText" class="text-slate-400 italic">音声認識されたテキストがここに表示されます...</span>
+          </div>
+
+          <div class="flex items-center justify-between w-full px-1 pt-1">
+            <label for="autoSendToggle" class="text-xs text-slate-600 font-medium flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="autoSendToggle" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+              <span>発言停止時に自動送信 (超爆速1タップ)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- DYNAMIC PRESET TEMPLATE SECTION -->
+        <div id="sectionPreset" class="hidden flex-1 flex flex-col gap-2 py-1">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-slate-500">全員共有の定型文 (1タップでセット):</span>
+            <button type="button" id="jumpToPresetMgmt" class="text-[10px] text-indigo-600 font-bold hover:underline">
+              <i class="fa-solid fa-pen-to-square"></i> 編集・追加
+            </button>
+          </div>
+          <div id="presetButtonsContainer" class="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+            <!-- Dynamic Presets will load here -->
+          </div>
+        </div>
+
+        <!-- TEXT MANUAL SECTION -->
+        <div id="sectionText" class="hidden flex-1 flex flex-col gap-2">
+          <textarea id="manualTextInput" placeholder="ここに直接手入力できます..." 
+            class="w-full h-28 text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none"></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <button id="submitBtn" class="w-full bg-slate-900 hover:bg-indigo-600 active:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 active:scale-[0.98]">
+          <i class="fa-solid fa-paper-plane text-indigo-400"></i>
+          <span>2. スプレッドシートへ送信 (2タップ目)</span>
+        </button>
+
+        <div id="statusToast" class="hidden text-center text-xs font-semibold p-2.5 rounded-xl border"></div>
+
+      </div>
+
+    </div>
+
+    <!-- PAGE 2: SPREADSHEET LOG PAGE VIEW -->
+    <div id="pageSheet" class="hidden flex flex-col gap-3">
+      
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-table"></i>
+            </div>
+            <div>
+              <h2 class="text-xs font-bold text-slate-800">集約スプレッドシート 閲覧ページ</h2>
+              <p class="text-[10px] text-slate-500">全メンバーの送信ログ一覧</p>
+            </div>
+          </div>
+          <span id="connectionBadge" class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">GAS連携有効</span>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+          <input type="text" id="searchInput" placeholder="キーワード検索..." class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 flex-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="filterCategory" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-600">
+            <option value="ALL">全ての種類</option>
+            <option value="困りごと">🚨 困りごと</option>
+            <option value="アイデア・提案">💡 提案</option>
+            <option value="連絡・メモ">📝 連絡</option>
+            <option value="未分類">💬 その他</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 flex flex-col gap-3">
+        <div class="flex justify-between items-center px-1">
+          <span class="text-xs font-bold text-slate-600">全件リスト (<span id="rowCountText">1</span>件)</span>
+          <button id="clearLogsBtn" class="text-[10px] text-slate-400 hover:text-rose-600 transition flex items-center gap-1">
+            <i class="fa-solid fa-trash-can"></i> 表示ログ消去
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200 text-xs">
+          <table class="w-full text-left border-collapse min-w-[300px]">
+            <thead class="bg-slate-100 text-slate-600 border-b border-slate-200">
+              <tr>
+                <th class="p-2.5 font-semibold">日時</th>
+                <th class="p-2.5 font-semibold">投稿者</th>
+                <th class="p-2.5 font-semibold">種類</th>
+                <th class="p-2.5 font-semibold">内容</th>
+              </tr>
+            </thead>
+            <tbody id="sheetTableBody" class="divide-y divide-slate-100 text-slate-700">
+              <tr class="bg-slate-50/50 hover:bg-slate-100/50 transition">
+                <td class="p-2.5 text-[10px] text-slate-400 whitespace-nowrap">10/08 14:05</td>
+                <td class="p-2.5 font-medium whitespace-nowrap">教員B</td>
+                <td class="p-2.5 whitespace-nowrap"><span class="bg-rose-100 text-rose-700 text-[10px] px-1.5 py-0.5 rounded font-bold">困りごと</span></td>
+                <td class="p-2.5 text-slate-700 leading-normal">印刷機Aのトナーが残り僅かです</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE 3: SHARED PRESETS MANAGEMENT VIEW -->
+    <div id="pagePresets" class="hidden flex flex-col gap-4">
+      
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <div>
+              <h2 class="text-xs font-bold text-slate-800">全員共有 定型文の編集・管理</h2>
+              <p class="text-[10px] text-slate-500">ここで変更すると全ユーザーのアプリに共有されます</p>
+            </div>
+          </div>
+          <button id="syncPresetsBtn" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm">
+            <i class="fa-solid fa-rotate"></i>
+            <span>手動同期</span>
+          </button>
+        </div>
+
+        <!-- Add New Preset Form -->
+        <div class="pt-2 border-t border-slate-100 flex gap-2">
+          <input type="text" id="newPresetInput" placeholder="新しい定型文を入力 (例: 🧹 共有スペースの掃除完了)" 
+            class="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button id="addPresetBtn" class="bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-xl transition whitespace-nowrap">
+            <i class="fa-solid fa-plus mr-1"></i>追加
+          </button>
+        </div>
+      </div>
+
+      <!-- Presets List Area -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700">登録中の共有定型文一覧</span>
+          <button id="resetPresetsBtn" class="text-[10px] text-slate-400 hover:text-rose-600 transition">
+            初期状態に戻す
+          </button>
+        </div>
+
+        <div id="editablePresetList" class="flex flex-col gap-2">
+          <!-- Dynamic editable items -->
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-relaxed mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          💡 <b>スプレッドシート連携の仕組み:</b><br>
+          定型文を追加・削除すると、Googleスプレッドシート内の「定型文」シートへ自動更新されます。他の端末でアプリを開いた際も自動的に同じ定型文が読み込まれます。
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Specification & README Modal -->
+  <div id="readmeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-wrench text-amber-400"></i>
+          トラブルシューティング・接続設定
+        </h3>
+        <button id="closeReadmeBtn" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 text-xs leading-relaxed text-slate-600">
+        
+        <div class="flex border-b border-slate-200 gap-1.5 font-bold text-slate-500 text-[11px] overflow-x-auto pb-1">
+          <button id="modalTabPwa" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap">📲 スマホアプリ化</button>
+          <button id="modalTabTrouble" class="pb-2 text-slate-400 hover:text-slate-600 whitespace-nowrap">転送診断</button>
+          <button id="modalTabSetup" class="pb-2 text-slate-400 hover:text-slate-600 whitespace-nowrap">GAS設定</button>
+          <button id="modalTabGas" class="pb-2 text-slate-400 hover:text-slate-600 whitespace-nowrap">最新GASコード</button>
+        </div>
+
+        <div id="contentPwa" class="space-y-3">
+          <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-900">
+            <h4 class="font-bold mb-1 flex items-center gap-1.5 text-xs text-indigo-800">
+              <i class="fa-solid fa-mobile-screen-button text-indigo-600"></i>
+              ホーム画面に追加するとアプリ感覚で即起動！
+            </h4>
+            <p class="text-[11px] leading-normal text-indigo-950">
+              ブラウザのアドレスバーが消えて全画面表示になり、毎回のURL入力なしで1タップ起動できます。
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+              <span class="font-bold text-slate-800 text-xs">iPhone (Safari) の場合</span>
+              <p class="text-[11px] text-slate-600">共有ボタン <i class="fa-solid fa-share-nodes"></i> ➔ 「ホーム画面に追加 ➕」 ➔ 右上「追加」</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+              <span class="font-bold text-slate-800 text-xs">Android (Chrome) の場合</span>
+              <p class="text-[11px] text-slate-600">メニュー <i class="fa-solid fa-ellipsis-vertical"></i> ➔ 「ホーム画面に追加」または「アプリをインストール」</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="contentTrouble" class="hidden space-y-3">
+          <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-900">
+            <h4 class="font-bold mb-1 text-xs text-rose-800">【マイクで「not allowed」エラーが出る場合】</h4>
+            <ol class="list-decimal list-inside space-y-1 text-[11px] text-rose-950">
+              <li>Gmail等のアプリ内表示から開いている場合は右上「⋮」から「Chromeで開く」を選択。</li>
+              <li>アドレスバー横の「🔒鍵マーク」をタップ ➔ 「サイトの設定」からマイクを「許可」に変更。</li>
+              <li>スマホ本体の「設定」➔「アプリ」➔「Chrome」➔「権限」でマイクを「許可」に。</li>
+            </ol>
+          </div>
+        </div>
+
+        <div id="contentSetup" class="hidden space-y-3">
+          <h4 class="font-bold text-slate-800 border-l-2 border-indigo-500 pl-2">【GAS設定手順】</h4>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 pl-1 text-[11px]">
+            <li>Googleスプレッドシートを作成し「拡張機能」➔「Apps Script」を開く。</li>
+            <li>「＋」からHTMLファイルを作成し、名前を <b>「目安箱アプリ」</b> に変更して右側のHTMLコードを全文貼付け。</li>
+            <li>`Code.gs` に「最新GASコード」タブの内容を貼り付けて保存（Ctrl+S）。</li>
+            <li>右上「デプロイ」➔「デプロイを管理」➔ 鉛筆アイコン ➔ 「新バージョン」でデプロイ。</li>
+          </ol>
+        </div>
+
+        <!-- UPDATED GAS CODE SECTION INCLUDING SHARED PRESETS LOGIC -->
+        <div id="contentGas" class="hidden space-y-2">
+          <p class="text-slate-500">以下のコードを `Code.gs` に上書き保存して「新バージョン」でデプロイしてください（定型文全員共有機能に対応）：</p>
+          <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[10px] font-mono overflow-x-auto leading-relaxed select-all">
+function doGet(e) {
+  if (e.parameter && e.parameter.action === 'getPresets') {
+    return getPresetsOutput();
+  }
+  return HtmlService.createHtmlOutputFromFile('目安箱アプリ')
+    .setTitle('目安箱マイク')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 定型文の更新処理
+    if (data.action === 'updatePresets') {
+      var presetSheet = ss.getSheetByName('定型文') || ss.insertSheet('定型文');
+      presetSheet.clear();
+      presetSheet.appendRow(['定型文']);
+      if (Array.isArray(data.presets)) {
+        data.presets.forEach(function(p) { presetSheet.appendRow([p]); });
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: '定型文更新完了' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // 通常の意見投稿処理
+    var sheet = ss.getSheetByName('意見一覧') || ss.getSheets()[0];
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['日時', '投稿者', '種類', '内容']);
+    }
+    var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm:ss');
+    sheet.appendRow([now, data.person || '未入力', data.category || '未分類', data.memo || '']);
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: '送信完了' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getPresetsOutput() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('定型文');
+  var presets = [];
+  if (sheet && sheet.getLastRow() > 1) {
+    var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+    presets = values.map(function(r) { return r[0]; }).filter(function(v) { return v; });
+  }
+  return ContentService.createTextOutput(JSON.stringify({ status: 'success', presets: presets }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+          </pre>
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 p-3 border-t border-slate-200 text-right">
+        <button id="closeReadmeBtn2" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded-lg text-xs hover:bg-slate-800">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // Initial Default Presets
+    const defaultPresets = [
+      "📦 印刷用紙・文房具の在庫が切れています",
+      "💻 共有PC/プロジェクターの不具合が発生しました",
+      "🧹 共有スペース・打ち合わせ室の清掃・整理が必要です",
+      "⚠️ 業務手順に関する疑問・改善案があります"
+    ];
+
+    // State Variables
+    let sharedPresets = [...defaultPresets];
+    let selectedCategory = '困りごと';
+    let currentInputMode = 'voice';
+    let isRecording = false;
+    let recognition = null;
+    let finalTranscript = '';
+    let logCount = 1;
+
+    // Default GAS URL
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyKG4yMUp6O9UqGrnmWYmvTdk6E9X1VvcZkxcY-qLwp9b7Mlt0pshOwGDjqSVPDJaj4/exec';
+
+    // DOM Elements
+    const navTabPost = document.getElementById('navTabPost');
+    const navTabSheet = document.getElementById('navTabSheet');
+    const navTabPresets = document.getElementById('navTabPresets');
+    const pagePost = document.getElementById('pagePost');
+    const pageSheet = document.getElementById('pageSheet');
+    const pagePresets = document.getElementById('pagePresets');
+    
+    const userNameInput = document.getElementById('userNameInput');
+    const gasUrlInput = document.getElementById('gasUrlInput');
+    const connectionBadge = document.getElementById('connectionBadge');
+    const testGasConnectionBtn = document.getElementById('testGasConnectionBtn');
+    
+    const presetButtonsContainer = document.getElementById('presetButtonsContainer');
+    const editablePresetList = document.getElementById('editablePresetList');
+    const newPresetInput = document.getElementById('newPresetInput');
+    const addPresetBtn = document.getElementById('addPresetBtn');
+    const syncPresetsBtn = document.getElementById('syncPresetsBtn');
+    const resetPresetsBtn = document.getElementById('resetPresetsBtn');
+    const jumpToPresetMgmt = document.getElementById('jumpToPresetMgmt');
+
+    const categoryContainer = document.getElementById('categoryContainer');
+    const modeVoiceBtn = document.getElementById('modeVoiceBtn');
+    const modePresetBtn = document.getElementById('modePresetBtn');
+    const modeTextBtn = document.getElementById('modeTextBtn');
+    const sectionVoice = document.getElementById('sectionVoice');
+    const sectionPreset = document.getElementById('sectionPreset');
+    const sectionText = document.getElementById('sectionText');
+
+    const micMainBtn = document.getElementById('micMainBtn');
+    const micBtnText = document.getElementById('micBtnText');
+    const speechStatus = document.getElementById('speechStatus');
+    const transcriptText = document.getElementById('transcriptText');
+    const autoSendToggle = document.getElementById('autoSendToggle');
+    const manualTextInput = document.getElementById('manualTextInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusToast = document.getElementById('statusToast');
+    const sheetTableBody = document.getElementById('sheetTableBody');
+    const sheetBadgeCount = document.getElementById('sheetBadgeCount');
+    const rowCountText = document.getElementById('rowCountText');
+
+    function switchPage(page) {
+      pagePost.classList.add('hidden');
+      pageSheet.classList.add('hidden');
+      pagePresets.classList.add('hidden');
+
+      navTabPost.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition';
+      navTabSheet.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition';
+      navTabPresets.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition';
+
+      if (page === 'post') {
+        pagePost.classList.remove('hidden');
+        navTabPost.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition';
+      } else if (page === 'sheet') {
+        pageSheet.classList.remove('hidden');
+        navTabSheet.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition';
+      } else if (page === 'presets') {
+        pagePresets.classList.remove('hidden');
+        navTabPresets.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition';
+      }
+    }
+
+    navTabPost.addEventListener('click', () => switchPage('post'));
+    navTabSheet.addEventListener('click', () => switchPage('sheet'));
+    navTabPresets.addEventListener('click', () => switchPage('presets'));
+    if (jumpToPresetMgmt) jumpToPresetMgmt.addEventListener('click', () => switchPage('presets'));
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedName = localStorage.getItem('meyasubako_user_name');
+      if (savedName && userNameInput) userNameInput.value = savedName;
+
+      const savedGasUrl = localStorage.getItem('meyasubako_gas_url') || DEFAULT_GAS_URL;
+      if (gasUrlInput) gasUrlInput.value = savedGasUrl;
+
+      const localCachedPresets = localStorage.getItem('meyasubako_shared_presets');
+      if (localCachedPresets) {
+        try { sharedPresets = JSON.parse(localCachedPresets); } catch (e) {}
+      }
+
+      renderPresets();
+      initSpeechRecognition();
+      fetchPresetsFromGAS();
+    });
+
+    if (userNameInput) {
+      userNameInput.addEventListener('input', (e) => {
+        localStorage.setItem('meyasubako_user_name', e.target.value.trim());
+      });
+    }
+
+    if (gasUrlInput) {
+      gasUrlInput.addEventListener('input', (e) => {
+        localStorage.setItem('meyasubako_gas_url', e.target.value.trim());
+      });
+    }
+
+    function renderPresets() {
+      // 1. Render in Post View
+      if (presetButtonsContainer) {
+        presetButtonsContainer.innerHTML = '';
+        sharedPresets.forEach(presetText => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'preset-item text-left text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 border border-slate-200 rounded-xl p-2.5 font-medium transition text-slate-700 active:scale-[0.98]';
+          btn.innerText = presetText;
+          btn.addEventListener('click', () => {
+            if (manualTextInput) manualTextInput.value = presetText;
+            switchMode('text');
+            showToast('定型文を手入力欄にセットしました', 'info');
+          });
+          presetButtonsContainer.appendChild(btn);
+        });
+      }
+
+      // 2. Render in Presets Management View
+      if (editablePresetList) {
+        editablePresetList.innerHTML = '';
+        sharedPresets.forEach((presetText, idx) => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200';
+          item.innerHTML = `
+            <input type="text" value="${escapeHtml(presetText)}" class="preset-edit-input flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800">
+            <button class="delete-preset-btn text-rose-500 hover:text-rose-700 p-1 text-xs" title="削除">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          `;
+
+          const inputEl = item.querySelector('.preset-edit-input');
+          inputEl.addEventListener('change', (e) => {
+            sharedPresets[idx] = e.target.value.trim();
+            saveAndSyncPresets();
+          });
+
+          const delBtn = item.querySelector('.delete-preset-btn');
+          delBtn.addEventListener('click', () => {
+            sharedPresets.splice(idx, 1);
+            saveAndSyncPresets();
+          });
+
+          editablePresetList.appendChild(item);
+        });
+      }
+    }
+
+    async function saveAndSyncPresets() {
+      localStorage.setItem('meyasubako_shared_presets', JSON.stringify(sharedPresets));
+      renderPresets();
+
+      const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
+      if (gasUrl) {
+        try {
+          await fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'updatePresets', presets: sharedPresets })
+          });
+          showToast('共有定型文を保存・GAS同期しました', 'success');
+        } catch (e) {
+          showToast('ローカル保存完了 (GAS同期失敗)', 'info');
+        }
+      } else {
+        showToast('定型文をローカル保存しました', 'info');
+      }
+    }
+
+    async function fetchPresetsFromGAS() {
+      const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
+      if (!gasUrl) return;
+
+      try {
+        const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getPresets';
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        if (data && data.presets && Array.isArray(data.presets) && data.presets.length > 0) {
+          sharedPresets = data.presets;
+          localStorage.setItem('meyasubako_shared_presets', JSON.stringify(sharedPresets));
+          renderPresets();
+        }
+      } catch (e) {
+        console.warn('Could not fetch shared presets from GAS:', e);
+      }
+    }
+
+    if (addPresetBtn) {
+      addPresetBtn.addEventListener('click', () => {
+        const text = newPresetInput.value.trim();
+        if (!text) return;
+        sharedPresets.push(text);
+        newPresetInput.value = '';
+        saveAndSyncPresets();
+      });
+    }
+
+    if (syncPresetsBtn) {
+      syncPresetsBtn.addEventListener('click', async () => {
+        showToast('スプレッドシートから最新定型文を取得中...', 'info');
+        await fetchPresetsFromGAS();
+        showToast('最新の定型文と同期しました', 'success');
+      });
+    }
+
+    if (resetPresetsBtn) {
+      resetPresetsBtn.addEventListener('click', () => {
+        if (confirm('定型文を初期状態に戻しますか？')) {
+          sharedPresets = [...defaultPresets];
+          saveAndSyncPresets();
+        }
+      });
+    }
+
+    if (categoryContainer) {
+      categoryContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cat-btn');
+        if (!btn) return;
+
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.className = 'cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
+        });
+
+        selectedCategory = btn.dataset.cat;
+        if (selectedCategory === '困りごと') {
+          btn.className = 'cat-btn active bg-rose-50 border-2 border-rose-500 text-rose-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
+        } else if (selectedCategory === 'アイデア・提案') {
+          btn.className = 'cat-btn active bg-amber-50 border-2 border-amber-500 text-amber-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
+        } else if (selectedCategory === '連絡・メモ') {
+          btn.className = 'cat-btn active bg-blue-50 border-2 border-blue-500 text-blue-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
+        } else {
+          btn.className = 'cat-btn active bg-slate-200 border-2 border-slate-600 text-slate-800 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
+        }
+      });
+    }
+
+    function switchMode(mode) {
+      currentInputMode = mode;
+      [modeVoiceBtn, modePresetBtn, modeTextBtn].forEach(b => {
+        if (b) b.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition';
+      });
+      if (sectionVoice) sectionVoice.classList.add('hidden');
+      if (sectionPreset) sectionPreset.classList.add('hidden');
+      if (sectionText) sectionText.classList.add('hidden');
+
+      if (mode === 'voice') {
+        if (modeVoiceBtn) modeVoiceBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition';
+        if (sectionVoice) sectionVoice.classList.remove('hidden');
+      } else if (mode === 'preset') {
+        if (modePresetBtn) modePresetBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition';
+        if (sectionPreset) sectionPreset.classList.remove('hidden');
+      } else {
+        if (modeTextBtn) modeTextBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition';
+        if (sectionText) sectionText.classList.remove('hidden');
+      }
+    }
+
+    if (modeVoiceBtn) modeVoiceBtn.addEventListener('click', () => switchMode('voice'));
+    if (modePresetBtn) modePresetBtn.addEventListener('click', () => switchMode('preset'));
+    if (modeTextBtn) modeTextBtn.addEventListener('click', () => switchMode('text'));
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        if (speechStatus) speechStatus.innerHTML = '<span class="text-rose-500">※お使いのブラウザは音声認識非対応です。「定型文」または「手入力」をご利用ください。</span>';
+        if (micMainBtn) {
+          micMainBtn.disabled = true;
+          micMainBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        if (micMainBtn) micMainBtn.classList.add('recording-pulse', 'from-rose-600', 'to-rose-700');
+        if (micBtnText) micBtnText.innerText = '話しています...';
+        if (speechStatus) {
+          speechStatus.innerText = '🎙️ 聞き取り中... 話し終えると自動停止します';
+          speechStatus.className = 'text-xs font-bold text-rose-600 text-center animate-pulse';
+        }
+      };
+
+      recognition.onresult = (e) => {
+        let currentText = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          currentText += e.results[i][0].transcript;
+        }
+        finalTranscript = currentText;
+        if (transcriptText) {
+          transcriptText.innerText = currentText;
+          transcriptText.classList.remove('text-slate-400', 'italic');
+          transcriptText.classList.add('text-slate-800');
+        }
+      };
+
+      recognition.onerror = (e) => {
+        stopRecording();
+        if (speechStatus) {
+          speechStatus.innerText = '認識エラー (マイク設定を確認してください)';
+          speechStatus.className = 'text-xs font-medium text-rose-500 text-center';
+        }
+      };
+
+      recognition.onend = () => {
+        stopRecording();
+        if (finalTranscript.trim()) {
+          if (speechStatus) {
+            speechStatus.innerText = '✅ 音声の録音が完了しました';
+            speechStatus.className = 'text-xs font-bold text-emerald-600 text-center';
+          }
+          if (autoSendToggle && autoSendToggle.checked) {
+            handleFormSubmit();
+          }
+        } else {
+          if (speechStatus) {
+            speechStatus.innerText = 'ボタンを押して喋り始めてください';
+            speechStatus.className = 'text-xs font-medium text-slate-500 text-center';
+          }
+        }
+      };
+    }
+
+    function startRecording() {
+      if (!recognition) return;
+      finalTranscript = '';
+      if (transcriptText) {
+        transcriptText.innerText = '聞き取り中...';
+        transcriptText.classList.add('text-slate-400', 'italic');
+      }
+      try { recognition.start(); } catch (err) {}
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      if (recognition) { try { recognition.stop(); } catch (err) {} }
+      if (micMainBtn) micMainBtn.classList.remove('recording-pulse', 'from-rose-600', 'to-rose-700');
+      if (micBtnText) micBtnText.innerText = '話す (タップ)';
+    }
+
+    if (micMainBtn) {
+      micMainBtn.addEventListener('click', () => {
+        if (!isRecording) startRecording();
+        else stopRecording();
+      });
+    }
+
+    if (submitBtn) submitBtn.addEventListener('click', handleFormSubmit);
+
+    async function handleFormSubmit() {
+      const personName = (userNameInput ? userNameInput.value.trim() : '') || '未入力職員';
+      let content = (currentInputMode === 'voice') ? finalTranscript.trim() : (manualTextInput ? manualTextInput.value.trim() : '');
+
+      if (!content) {
+        showToast('内容が入力されていません。音声または手入力で入力してください。', 'error');
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = `${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-70');
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>スプレッドシートへ転送中...</span>';
+
+      const payload = { person: personName, category: selectedCategory, memo: content };
+      const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
+
+      if (gasUrl) {
+        try {
+          await fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+          });
+        } catch (err) {}
+      }
+
+      setTimeout(() => {
+        if (sheetTableBody) {
+          const tr = document.createElement('tr');
+          tr.className = 'bg-emerald-50/60 animate-pulse transition';
+
+          let catBadgeClass = 'bg-slate-100 text-slate-700';
+          if (selectedCategory === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
+          if (selectedCategory === 'アイデア・提案') catBadgeClass = 'bg-amber-100 text-amber-700';
+          if (selectedCategory === '連絡・メモ') catBadgeClass = 'bg-blue-100 text-blue-700';
+
+          tr.innerHTML = `
+            <td class="p-2.5 text-[10px] text-slate-500 whitespace-nowrap">${dateStr}</td>
+            <td class="p-2.5 font-medium whitespace-nowrap">${escapeHtml(personName)}</td>
+            <td class="p-2.5 whitespace-nowrap"><span class="${catBadgeClass} text-[10px] px-1.5 py-0.5 rounded font-bold">${selectedCategory}</span></td>
+            <td class="p-2.5 text-slate-800 leading-normal">${escapeHtml(content)}</td>
+          `;
+
+          sheetTableBody.insertBefore(tr, sheetTableBody.firstChild);
+          updateRowCount();
+          setTimeout(() => tr.classList.remove('bg-emerald-50/60', 'animate-pulse'), 1500);
+        }
+
+        finalTranscript = '';
+        if (transcriptText) {
+          transcriptText.innerText = '音声認識されたテキストがここに表示されます...';
+          transcriptText.className = 'text-slate-400 italic';
+        }
+        if (manualTextInput) manualTextInput.value = '';
+        if (speechStatus) {
+          speechStatus.innerText = 'ボタンを押して喋り始めてください';
+          speechStatus.className = 'text-xs font-medium text-slate-500 text-center';
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70');
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-indigo-400"></i> <span>2. スプレッドシートへ送信 (2タップ目)</span>';
+
+        showToast('🚀 スプレッドシートへ記録完了！', 'success');
+      }, 600);
+    }
+
+    function updateRowCount() {
+      if (!sheetTableBody) return;
+      const rows = sheetTableBody.querySelectorAll('tr');
+      logCount = rows.length;
+      if (sheetBadgeCount) sheetBadgeCount.innerText = logCount;
+      if (rowCountText) rowCountText.innerText = logCount;
+    }
+
+    function showToast(msg, type = 'info') {
+      if (!statusToast) return;
+      statusToast.classList.remove('hidden', 'bg-rose-50', 'border-rose-200', 'text-rose-700', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-700', 'bg-indigo-50', 'border-indigo-200', 'text-indigo-700');
+
+      if (type === 'error') statusToast.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-700');
+      else if (type === 'success') statusToast.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-700');
+      else statusToast.classList.add('bg-indigo-50', 'border-indigo-200', 'text-indigo-700');
+
+      statusToast.innerText = msg;
+      setTimeout(() => { statusToast.classList.add('hidden'); }, 4000);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    // Modal Events
+    const toggleReadmeBtn = document.getElementById('toggleReadmeBtn');
+    const togglePwaBtn = document.getElementById('togglePwaBtn');
+    const readmeModal = document.getElementById('readmeModal');
+    const closeReadmeBtn = document.getElementById('closeReadmeBtn');
+    const closeReadmeBtn2 = document.getElementById('closeReadmeBtn2');
+
+    if (toggleReadmeBtn) toggleReadmeBtn.addEventListener('click', () => readmeModal.classList.remove('hidden'));
+    if (togglePwaBtn) togglePwaBtn.addEventListener('click', () => { readmeModal.classList.remove('hidden'); openModalTab('pwa'); });
+    if (closeReadmeBtn) closeReadmeBtn.addEventListener('click', () => readmeModal.classList.add('hidden'));
+    if (closeReadmeBtn2) closeReadmeBtn2.addEventListener('click', () => readmeModal.classList.add('hidden'));
+
+    const modalTabPwa = document.getElementById('modalTabPwa');
+    const modalTabTrouble = document.getElementById('modalTabTrouble');
+    const modalTabSetup = document.getElementById('modalTabSetup');
+    const modalTabGas = document.getElementById('modalTabGas');
+    const contentPwa = document.getElementById('contentPwa');
+    const contentTrouble = document.getElementById('contentTrouble');
+    const contentSetup = document.getElementById('contentSetup');
+    const contentGas = document.getElementById('contentGas');
+
+    function openModalTab(tab) {
+      [modalTabPwa, modalTabTrouble, modalTabSetup, modalTabGas].forEach(t => { if(t) t.className = 'pb-2 text-slate-400 hover:text-slate-600 font-bold whitespace-nowrap'; });
+      [contentPwa, contentTrouble, contentSetup, contentGas].forEach(c => { if(c) c.classList.add('hidden'); });
+
+      if (tab === 'pwa' && modalTabPwa && contentPwa) { modalTabPwa.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentPwa.classList.remove('hidden'); }
+      if (tab === 'trouble' && modalTabTrouble && contentTrouble) { modalTabTrouble.className = 'pb-2 border-b-2 border-amber-500 text-amber-600 font-bold whitespace-nowrap'; contentTrouble.classList.remove('hidden'); }
+      if (tab === 'setup' && modalTabSetup && contentSetup) { modalTabSetup.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentSetup.classList.remove('hidden'); }
+      if (tab === 'gas' && modalTabGas && contentGas) { modalTabGas.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentGas.classList.remove('hidden'); }
+    }
+
+    if (modalTabPwa) modalTabPwa.addEventListener('click', () => openModalTab('pwa'));
+    if (modalTabTrouble) modalTabTrouble.addEventListener('click', () => openModalTab('trouble'));
+    if (modalTabSetup) modalTabSetup.addEventListener('click', () => openModalTab('setup'));
+    if (modalTabGas) modalTabGas.addEventListener('click', () => openModalTab('gas'));
+  </script>
+</body>
+</html>
