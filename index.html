@@ -248,13 +248,13 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-slate-200 text-xs">
-          <table class="w-full text-left border-collapse min-w-[300px]">
+          <table class="w-full text-left border-collapse table-fixed min-w-[320px]">
             <thead class="bg-slate-100 text-slate-600 border-b border-slate-200">
               <tr>
-                <th class="p-2.5 font-semibold">日時</th>
-                <th class="p-2.5 font-semibold">投稿者</th>
-                <th class="p-2.5 font-semibold">種類</th>
-                <th class="p-2.5 font-semibold">内容</th>
+                <th class="p-2 font-semibold w-[68px]">日時</th>
+                <th class="p-2 font-semibold w-[72px]">投稿者</th>
+                <th class="p-2 font-semibold w-[60px]">種類</th>
+                <th class="p-2 font-semibold">内容</th>
               </tr>
             </thead>
             <tbody id="sheetTableBody" class="divide-y divide-slate-100 text-slate-700">
@@ -1084,10 +1084,10 @@ function getLogsOutput() {
           if (log.category === '連絡・メモ') catBadgeClass = 'bg-blue-100 text-blue-700';
 
           tr.innerHTML = `
-            <td class="p-2.5 text-[10px] text-slate-500 whitespace-nowrap">${escapeHtml(log.date)}</td>
-            <td class="p-2.5 font-medium whitespace-nowrap">${escapeHtml(log.person)}</td>
-            <td class="p-2.5 whitespace-nowrap"><span class="${catBadgeClass} text-[10px] px-1.5 py-0.5 rounded font-bold">${escapeHtml(log.category)}</span></td>
-            <td class="p-2.5 text-slate-800 leading-normal">${escapeHtml(log.content)}</td>
+            <td class="p-2 text-[10px] text-slate-500 align-top">${escapeHtml(log.date)}</td>
+            <td class="p-2 font-medium text-slate-800 align-top truncate" title="${escapeHtml(log.person)}">${escapeHtml(log.person)}</td>
+            <td class="p-2 align-top"><span class="${catBadgeClass} text-[9px] px-1 py-0.5 rounded font-bold whitespace-nowrap inline-block">${escapeHtml(log.category)}</span></td>
+            <td class="p-2 text-slate-800 leading-relaxed align-top break-words">${escapeHtml(log.content)}</td>
           `;
           sheetTableBody.appendChild(tr);
         });
