@@ -60,7 +60,7 @@
         <button id="navTabSheet" class="flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition">
           <i class="fa-solid fa-table"></i>
           <span>2. ログ</span>
-          <span id="sheetBadgeCount" class="bg-indigo-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-normal">1</span>
+          <span id="sheetBadgeCount" class="bg-indigo-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-normal">0</span>
         </button>
         <button id="navTabPresets" class="flex-1 py-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 transition">
           <i class="fa-solid fa-sliders"></i>
@@ -75,7 +75,7 @@
     <!-- PAGE 1: POST PAGE VIEW -->
     <div id="pagePost" class="flex flex-col gap-4">
 
-      <!-- Step / User Info Banner -->
+      <!-- User Info Banner -->
       <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80">
         <div class="flex items-center justify-between gap-2 mb-2">
           <div class="flex items-center gap-2 flex-1">
@@ -128,6 +128,7 @@
         </div>
       </div>
 
+      <!-- Input Modes & Editable Content Area -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex-1 flex flex-col justify-between gap-4">
         
         <!-- Input Mode Switcher -->
@@ -143,23 +144,29 @@
           </button>
         </div>
 
-        <!-- VOICE INPUT SECTION -->
-        <div id="sectionVoice" class="flex-1 flex flex-col items-center justify-center gap-3 py-2">
+        <!-- VOICE INPUT SECTION (EDITABLE TEXTAREA INCLUDED) -->
+        <div id="sectionVoice" class="flex-1 flex flex-col items-center justify-center gap-3 py-1">
           
-          <button id="micMainBtn" class="relative group w-28 h-28 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-600 text-white flex flex-col items-center justify-center shadow-lg hover:shadow-indigo-500/30 transition transform active:scale-90">
-            <i class="fa-solid fa-microphone text-3xl mb-1"></i>
+          <button id="micMainBtn" class="relative group w-24 h-24 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-600 text-white flex flex-col items-center justify-center shadow-lg hover:shadow-indigo-500/30 transition transform active:scale-90">
+            <i class="fa-solid fa-microphone text-2xl mb-1"></i>
             <span id="micBtnText" class="text-xs font-bold">話す (タップ)</span>
           </button>
 
-          <p id="speechStatus" class="text-xs font-medium text-slate-500 text-center min-h-[1.5rem]">
+          <p id="speechStatus" class="text-xs font-medium text-slate-500 text-center min-h-[1.25rem]">
             ボタンを押して喋り始めてください
           </p>
 
-          <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[80px] max-h-[120px] overflow-y-auto text-sm text-slate-700 leading-relaxed">
-            <span id="transcriptText" class="text-slate-400 italic">音声認識されたテキストがここに表示されます...</span>
+          <!-- Directly editable Textarea for Voice Results -->
+          <div class="w-full relative">
+            <label class="block text-[10px] font-bold text-slate-400 mb-1 flex justify-between items-center">
+              <span>🎙️ 認識テキスト (直接タップしてキーボード修正可能):</span>
+              <span id="clearVoiceTextBtn" class="cursor-pointer text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-eraser"></i> クリア</span>
+            </label>
+            <textarea id="voiceTextarea" placeholder="音声認識された文章がここに表示されます。直接タップして手入力で修正もできます..." 
+              class="w-full h-24 text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none text-slate-800 leading-relaxed transition"></textarea>
           </div>
 
-          <div class="flex items-center justify-between w-full px-1 pt-1">
+          <div class="flex items-center justify-between w-full px-1">
             <label for="autoSendToggle" class="text-xs text-slate-600 font-medium flex items-center gap-1.5 cursor-pointer">
               <input type="checkbox" id="autoSendToggle" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
               <span>発言停止時に自動送信 (超爆速1タップ)</span>
@@ -182,8 +189,9 @@
 
         <!-- TEXT MANUAL SECTION -->
         <div id="sectionText" class="hidden flex-1 flex flex-col gap-2">
+          <label class="block text-xs font-bold text-slate-500">手入力・修正欄 (音声入力の内容もここに保持されます):</label>
           <textarea id="manualTextInput" placeholder="ここに直接手入力できます..." 
-            class="w-full h-28 text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none"></textarea>
+            class="w-full h-28 text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none text-slate-800 leading-relaxed"></textarea>
         </div>
 
         <!-- Submit Button -->
@@ -198,7 +206,7 @@
 
     </div>
 
-    <!-- PAGE 2: SPREADSHEET LOG PAGE VIEW -->
+    <!-- PAGE 2: SPREADSHEET LOG PAGE VIEW (PERSISTENT LOGS & REALTIME SYNC) -->
     <div id="pageSheet" class="hidden flex flex-col gap-3">
       
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col gap-3">
@@ -209,10 +217,14 @@
             </div>
             <div>
               <h2 class="text-xs font-bold text-slate-800">集約スプレッドシート 閲覧ページ</h2>
-              <p class="text-[10px] text-slate-500">全メンバーの送信ログ一覧</p>
+              <p class="text-[10px] text-slate-500">投稿データの一覧・スプレッドシート同期</p>
             </div>
           </div>
-          <span id="connectionBadge" class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">GAS連携有効</span>
+          <!-- Realtime Sync Button -->
+          <button id="fetchLogsFromGasBtn" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm active:scale-95">
+            <i class="fa-solid fa-rotate"></i>
+            <span>最新情報を同期</span>
+          </button>
         </div>
 
         <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
@@ -229,9 +241,9 @@
 
       <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 flex flex-col gap-3">
         <div class="flex justify-between items-center px-1">
-          <span class="text-xs font-bold text-slate-600">全件リスト (<span id="rowCountText">1</span>件)</span>
+          <span class="text-xs font-bold text-slate-600">表示中のログ (<span id="rowCountText">0</span>件)</span>
           <button id="clearLogsBtn" class="text-[10px] text-slate-400 hover:text-rose-600 transition flex items-center gap-1">
-            <i class="fa-solid fa-trash-can"></i> 表示ログ消去
+            <i class="fa-solid fa-trash-can"></i> キャッシュ消去
           </button>
         </div>
 
@@ -246,12 +258,7 @@
               </tr>
             </thead>
             <tbody id="sheetTableBody" class="divide-y divide-slate-100 text-slate-700">
-              <tr class="bg-slate-50/50 hover:bg-slate-100/50 transition">
-                <td class="p-2.5 text-[10px] text-slate-400 whitespace-nowrap">10/08 14:05</td>
-                <td class="p-2.5 font-medium whitespace-nowrap">教員B</td>
-                <td class="p-2.5 whitespace-nowrap"><span class="bg-rose-100 text-rose-700 text-[10px] px-1.5 py-0.5 rounded font-bold">困りごと</span></td>
-                <td class="p-2.5 text-slate-700 leading-normal">印刷機Aのトナーが残り僅かです</td>
-              </tr>
+              <!-- Persistent logs render dynamically here -->
             </tbody>
           </table>
         </div>
@@ -372,24 +379,23 @@
           <h4 class="font-bold text-slate-800 border-l-2 border-indigo-500 pl-2">【GAS設定手順】</h4>
           <ol class="list-decimal list-inside space-y-1 text-slate-600 pl-1 text-[11px]">
             <li>Googleスプレッドシートを作成し「拡張機能」➔「Apps Script」を開く。</li>
-            <li>「＋」からHTMLファイルを作成し、名前を <b>「index」</b> に変更して右側のHTMLコードを全文貼付け。</li>
             <li>`Code.gs` に「最新GASコード」タブの内容を貼り付けて保存（Ctrl+S）。</li>
-            <li>右上「デプロイ」➔「デプロイを管理」➔ 鉛筆アイコン ➔ 「新バージョン」でデプロイ。</li>
+            <li>右上「デプロイ」➔「新バージョン」で再デプロイ（アクセス権は「全員」）。</li>
           </ol>
         </div>
 
-        <!-- UPDATED GAS CODE SECTION INCLUDING SHARED PRESETS LOGIC -->
         <div id="contentGas" class="hidden space-y-2">
-          <p class="text-slate-500">以下のコードを `Code.gs` に上書き保存して「新バージョン」でデプロイしてください（定型文全員共有機能に対応）：</p>
+          <p class="text-slate-500">以下の最新コードを `Code.gs` に上書き保存して「新バージョン」で再デプロイしてください：</p>
           <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[10px] font-mono overflow-x-auto leading-relaxed select-all">
 function doGet(e) {
   if (e.parameter && e.parameter.action === 'getPresets') {
     return getPresetsOutput();
   }
-  return HtmlService.createHtmlOutputFromFile('目安箱アプリ')
-    .setTitle('目安箱マイク')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  if (e.parameter && e.parameter.action === 'getLogs') {
+    return getLogsOutput();
+  }
+  return ContentService.createTextOutput("目安箱 API サーバー正常動作中")
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 function doPost(e) {
@@ -436,6 +442,33 @@ function getPresetsOutput() {
   return ContentService.createTextOutput(JSON.stringify({ status: 'success', presets: presets }))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+function getLogsOutput() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('意見一覧') || ss.getSheets()[0];
+  var logs = [];
+  if (sheet && sheet.getLastRow() > 1) {
+    var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
+    logs = values.map(function(r, idx) {
+      var dateVal = r[0];
+      var dateStr = '';
+      if (dateVal instanceof Date) {
+        dateStr = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'MM/dd HH:mm');
+      } else {
+        dateStr = String(dateVal || '');
+      }
+      return {
+        id: 'gas_' + idx,
+        date: dateStr,
+        person: String(r[1] || '未入力'),
+        category: String(r[2] || '未分類'),
+        content: String(r[3] || '')
+      };
+    }).reverse();
+  }
+  return ContentService.createTextOutput(JSON.stringify({ status: 'success', logs: logs }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
           </pre>
         </div>
 
@@ -451,7 +484,7 @@ function getPresetsOutput() {
 
   <!-- JavaScript Logic -->
   <script>
-    // Initial Default Presets
+    // Default Presets
     const defaultPresets = [
       "📦 印刷用紙・文房具の在庫が切れています",
       "💻 共有PC/プロジェクターの不具合が発生しました",
@@ -459,17 +492,28 @@ function getPresetsOutput() {
       "⚠️ 業務手順に関する疑問・改善案があります"
     ];
 
+    // Initial Sample Log
+    const initialSampleLog = [
+      {
+        id: "sample_1",
+        date: "10/08 14:05",
+        person: "教員B",
+        category: "困りごと",
+        content: "印刷機Aのトナーが残り僅かです"
+      }
+    ];
+
     // State Variables
     let sharedPresets = [...defaultPresets];
+    let persistentLogs = [];
     let selectedCategory = '困りごと';
     let currentInputMode = 'voice';
     let isRecording = false;
     let recognition = null;
-    let finalTranscript = '';
-    let logCount = 1;
+    let activeTextContent = '';
 
     // Default GAS URL
-    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwgQ7_5LBQXxUuJ39N35bFtBJwOYM_d3r34ecfZlIKzNZgymZKi4ukcCrUZ_gr5n0IK/exec';
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyKG4yMUp6O9UqGrnmWYmvTdk6E9X1VvcZkxcY-qLwp9b7Mlt0pshOwGDjqSVPDJaj4/exec';
 
     // DOM Elements
     const navTabPost = document.getElementById('navTabPost');
@@ -481,7 +525,6 @@ function getPresetsOutput() {
     
     const userNameInput = document.getElementById('userNameInput');
     const gasUrlInput = document.getElementById('gasUrlInput');
-    const connectionBadge = document.getElementById('connectionBadge');
     const testGasConnectionBtn = document.getElementById('testGasConnectionBtn');
     
     const presetButtonsContainer = document.getElementById('presetButtonsContainer');
@@ -503,14 +546,20 @@ function getPresetsOutput() {
     const micMainBtn = document.getElementById('micMainBtn');
     const micBtnText = document.getElementById('micBtnText');
     const speechStatus = document.getElementById('speechStatus');
-    const transcriptText = document.getElementById('transcriptText');
+    const voiceTextarea = document.getElementById('voiceTextarea');
+    const clearVoiceTextBtn = document.getElementById('clearVoiceTextBtn');
     const autoSendToggle = document.getElementById('autoSendToggle');
     const manualTextInput = document.getElementById('manualTextInput');
     const submitBtn = document.getElementById('submitBtn');
     const statusToast = document.getElementById('statusToast');
+    
     const sheetTableBody = document.getElementById('sheetTableBody');
     const sheetBadgeCount = document.getElementById('sheetBadgeCount');
     const rowCountText = document.getElementById('rowCountText');
+    const searchInput = document.getElementById('searchInput');
+    const filterCategory = document.getElementById('filterCategory');
+    const clearLogsBtn = document.getElementById('clearLogsBtn');
+    const fetchLogsFromGasBtn = document.getElementById('fetchLogsFromGasBtn');
 
     function switchPage(page) {
       pagePost.classList.add('hidden');
@@ -527,6 +576,7 @@ function getPresetsOutput() {
       } else if (page === 'sheet') {
         pageSheet.classList.remove('hidden');
         navTabSheet.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition';
+        renderLogs();
       } else if (page === 'presets') {
         pagePresets.classList.remove('hidden');
         navTabPresets.className = 'flex-1 py-2.5 text-[11px] font-bold border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/80 flex items-center justify-center gap-1 transition';
@@ -539,18 +589,35 @@ function getPresetsOutput() {
     if (jumpToPresetMgmt) jumpToPresetMgmt.addEventListener('click', () => switchPage('presets'));
 
     window.addEventListener('DOMContentLoaded', () => {
+      // 1. Load User Info
       const savedName = localStorage.getItem('meyasubako_user_name');
       if (savedName && userNameInput) userNameInput.value = savedName;
 
+      // 2. Load GAS URL
       const savedGasUrl = localStorage.getItem('meyasubako_gas_url') || DEFAULT_GAS_URL;
       if (gasUrlInput) gasUrlInput.value = savedGasUrl;
 
+      // 3. Load Shared Presets
       const localCachedPresets = localStorage.getItem('meyasubako_shared_presets');
       if (localCachedPresets) {
         try { sharedPresets = JSON.parse(localCachedPresets); } catch (e) {}
       }
 
+      // 4. Load Persistent Sent Logs
+      const localCachedLogs = localStorage.getItem('meyasubako_sent_logs');
+      if (localCachedLogs) {
+        try {
+          persistentLogs = JSON.parse(localCachedLogs);
+        } catch (e) {
+          persistentLogs = [...initialSampleLog];
+        }
+      } else {
+        persistentLogs = [...initialSampleLog];
+        localStorage.setItem('meyasubako_sent_logs', JSON.stringify(persistentLogs));
+      }
+
       renderPresets();
+      renderLogs();
       initSpeechRecognition();
       fetchPresetsFromGAS();
     });
@@ -567,8 +634,35 @@ function getPresetsOutput() {
       });
     }
 
+    function syncTextContent(newText) {
+      activeTextContent = newText;
+      if (voiceTextarea) voiceTextarea.value = activeTextContent;
+      if (manualTextInput) manualTextInput.value = activeTextContent;
+    }
+
+    if (voiceTextarea) {
+      voiceTextarea.addEventListener('input', (e) => {
+        syncTextContent(e.target.value);
+      });
+    }
+
+    if (manualTextInput) {
+      manualTextInput.addEventListener('input', (e) => {
+        syncTextContent(e.target.value);
+      });
+    }
+
+    if (clearVoiceTextBtn) {
+      clearVoiceTextBtn.addEventListener('click', () => {
+        syncTextContent('');
+        if (speechStatus) {
+          speechStatus.innerText = 'ボタンを押して喋り始めてください';
+          speechStatus.className = 'text-xs font-medium text-slate-500 text-center';
+        }
+      });
+    }
+
     function renderPresets() {
-      // 1. Render in Post View
       if (presetButtonsContainer) {
         presetButtonsContainer.innerHTML = '';
         sharedPresets.forEach(presetText => {
@@ -577,15 +671,14 @@ function getPresetsOutput() {
           btn.className = 'preset-item text-left text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 border border-slate-200 rounded-xl p-2.5 font-medium transition text-slate-700 active:scale-[0.98]';
           btn.innerText = presetText;
           btn.addEventListener('click', () => {
-            if (manualTextInput) manualTextInput.value = presetText;
+            syncTextContent(presetText);
             switchMode('text');
-            showToast('定型文を手入力欄にセットしました', 'info');
+            showToast('定型文を入力欄にセットしました', 'info');
           });
           presetButtonsContainer.appendChild(btn);
         });
       }
 
-      // 2. Render in Presets Management View
       if (editablePresetList) {
         editablePresetList.innerHTML = '';
         sharedPresets.forEach((presetText, idx) => {
@@ -653,6 +746,47 @@ function getPresetsOutput() {
       } catch (e) {
         console.warn('Could not fetch shared presets from GAS:', e);
       }
+    }
+
+    // REALTIME LOG SYNC FROM SPREADSHEET (GAS)
+    async function fetchLogsFromGAS() {
+      const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
+      if (!gasUrl) {
+        showToast('GASのURLが設定されていません', 'error');
+        return;
+      }
+
+      if (fetchLogsFromGasBtn) {
+        fetchLogsFromGasBtn.disabled = true;
+        fetchLogsFromGasBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>取得中...</span>';
+      }
+
+      try {
+        const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getLogs';
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+
+        if (data && data.status === 'success' && Array.isArray(data.logs)) {
+          persistentLogs = data.logs;
+          localStorage.setItem('meyasubako_sent_logs', JSON.stringify(persistentLogs));
+          renderLogs();
+          showToast(`✅ スプレッドシートから最新 ${data.logs.length} 件のログを取得しました`, 'success');
+        } else {
+          showToast('ログの取得に失敗しました', 'error');
+        }
+      } catch (e) {
+        console.error('Failed to fetch logs:', e);
+        showToast('ログ同期エラー (GASを最新コードで再デプロイしてください)', 'error');
+      } finally {
+        if (fetchLogsFromGasBtn) {
+          fetchLogsFromGasBtn.disabled = false;
+          fetchLogsFromGasBtn.innerHTML = '<i class="fa-solid fa-rotate"></i><span>最新情報を同期</span>';
+        }
+      }
+    }
+
+    if (fetchLogsFromGasBtn) {
+      fetchLogsFromGasBtn.addEventListener('click', fetchLogsFromGAS);
     }
 
     if (addPresetBtn) {
@@ -760,12 +894,7 @@ function getPresetsOutput() {
         for (let i = e.resultIndex; i < e.results.length; i++) {
           currentText += e.results[i][0].transcript;
         }
-        finalTranscript = currentText;
-        if (transcriptText) {
-          transcriptText.innerText = currentText;
-          transcriptText.classList.remove('text-slate-400', 'italic');
-          transcriptText.classList.add('text-slate-800');
-        }
+        syncTextContent(currentText);
       };
 
       recognition.onerror = (e) => {
@@ -778,9 +907,9 @@ function getPresetsOutput() {
 
       recognition.onend = () => {
         stopRecording();
-        if (finalTranscript.trim()) {
+        if (activeTextContent.trim()) {
           if (speechStatus) {
-            speechStatus.innerText = '✅ 音声の録音が完了しました';
+            speechStatus.innerText = '✅ 認識完了！下のテキストエリアで手入力修正できます';
             speechStatus.className = 'text-xs font-bold text-emerald-600 text-center';
           }
           if (autoSendToggle && autoSendToggle.checked) {
@@ -797,10 +926,8 @@ function getPresetsOutput() {
 
     function startRecording() {
       if (!recognition) return;
-      finalTranscript = '';
-      if (transcriptText) {
-        transcriptText.innerText = '聞き取り中...';
-        transcriptText.classList.add('text-slate-400', 'italic');
+      if (speechStatus) {
+        speechStatus.innerText = '聞き取り中...';
       }
       try { recognition.start(); } catch (err) {}
     }
@@ -823,7 +950,7 @@ function getPresetsOutput() {
 
     async function handleFormSubmit() {
       const personName = (userNameInput ? userNameInput.value.trim() : '') || '未入力職員';
-      let content = (currentInputMode === 'voice') ? finalTranscript.trim() : (manualTextInput ? manualTextInput.value.trim() : '');
+      const content = activeTextContent.trim();
 
       if (!content) {
         showToast('内容が入力されていません。音声または手入力で入力してください。', 'error');
@@ -840,6 +967,7 @@ function getPresetsOutput() {
       const payload = { person: personName, category: selectedCategory, memo: content };
       const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
 
+      // 1. Send to GAS Spreadsheet via API
       if (gasUrl) {
         try {
           await fetch(gasUrl, {
@@ -851,34 +979,22 @@ function getPresetsOutput() {
         } catch (err) {}
       }
 
+      // 2. Persistent Local Storage Save Functionality
       setTimeout(() => {
-        if (sheetTableBody) {
-          const tr = document.createElement('tr');
-          tr.className = 'bg-emerald-50/60 animate-pulse transition';
+        const newLogItem = {
+          id: 'log_' + Date.now(),
+          date: dateStr,
+          person: personName,
+          category: selectedCategory,
+          content: content
+        };
 
-          let catBadgeClass = 'bg-slate-100 text-slate-700';
-          if (selectedCategory === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
-          if (selectedCategory === 'アイデア・提案') catBadgeClass = 'bg-amber-100 text-amber-700';
-          if (selectedCategory === '連絡・メモ') catBadgeClass = 'bg-blue-100 text-blue-700';
+        persistentLogs.unshift(newLogItem);
+        localStorage.setItem('meyasubako_sent_logs', JSON.stringify(persistentLogs));
 
-          tr.innerHTML = `
-            <td class="p-2.5 text-[10px] text-slate-500 whitespace-nowrap">${dateStr}</td>
-            <td class="p-2.5 font-medium whitespace-nowrap">${escapeHtml(personName)}</td>
-            <td class="p-2.5 whitespace-nowrap"><span class="${catBadgeClass} text-[10px] px-1.5 py-0.5 rounded font-bold">${selectedCategory}</span></td>
-            <td class="p-2.5 text-slate-800 leading-normal">${escapeHtml(content)}</td>
-          `;
+        renderLogs();
 
-          sheetTableBody.insertBefore(tr, sheetTableBody.firstChild);
-          updateRowCount();
-          setTimeout(() => tr.classList.remove('bg-emerald-50/60', 'animate-pulse'), 1500);
-        }
-
-        finalTranscript = '';
-        if (transcriptText) {
-          transcriptText.innerText = '音声認識されたテキストがここに表示されます...';
-          transcriptText.className = 'text-slate-400 italic';
-        }
-        if (manualTextInput) manualTextInput.value = '';
+        syncTextContent('');
         if (speechStatus) {
           speechStatus.innerText = 'ボタンを押して喋り始めてください';
           speechStatus.className = 'text-xs font-medium text-slate-500 text-center';
@@ -888,16 +1004,71 @@ function getPresetsOutput() {
         submitBtn.classList.remove('opacity-70');
         submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-indigo-400"></i> <span>2. スプレッドシートへ送信 (2タップ目)</span>';
 
-        showToast('🚀 スプレッドシートへ記録完了！', 'success');
+        showToast('🚀 送信完了＆ログに保存されました！', 'success');
       }, 600);
     }
 
-    function updateRowCount() {
+    function renderLogs() {
       if (!sheetTableBody) return;
-      const rows = sheetTableBody.querySelectorAll('tr');
-      logCount = rows.length;
-      if (sheetBadgeCount) sheetBadgeCount.innerText = logCount;
-      if (rowCountText) rowCountText.innerText = logCount;
+
+      const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      const catFilter = filterCategory ? filterCategory.value : 'ALL';
+
+      const filtered = persistentLogs.filter(item => {
+        const matchQuery = !query || 
+          item.person.toLowerCase().includes(query) || 
+          item.content.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query);
+        
+        const matchCat = (catFilter === 'ALL') || (item.category === catFilter);
+
+        return matchQuery && matchCat;
+      });
+
+      sheetTableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        sheetTableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="p-4 text-center text-slate-400 italic">該当する送信ログはありません</td>
+          </tr>
+        `;
+      } else {
+        filtered.forEach(log => {
+          const tr = document.createElement('tr');
+          tr.className = 'bg-white hover:bg-slate-50 transition border-b border-slate-100';
+
+          let catBadgeClass = 'bg-slate-100 text-slate-700';
+          if (log.category === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
+          if (log.category === 'アイデア・提案') catBadgeClass = 'bg-amber-100 text-amber-700';
+          if (log.category === '連絡・メモ') catBadgeClass = 'bg-blue-100 text-blue-700';
+
+          tr.innerHTML = `
+            <td class="p-2.5 text-[10px] text-slate-500 whitespace-nowrap">${escapeHtml(log.date)}</td>
+            <td class="p-2.5 font-medium whitespace-nowrap">${escapeHtml(log.person)}</td>
+            <td class="p-2.5 whitespace-nowrap"><span class="${catBadgeClass} text-[10px] px-1.5 py-0.5 rounded font-bold">${escapeHtml(log.category)}</span></td>
+            <td class="p-2.5 text-slate-800 leading-normal">${escapeHtml(log.content)}</td>
+          `;
+          sheetTableBody.appendChild(tr);
+        });
+      }
+
+      if (sheetBadgeCount) sheetBadgeCount.innerText = persistentLogs.length;
+      if (rowCountText) rowCountText.innerText = filtered.length;
+    }
+
+    if (searchInput) searchInput.addEventListener('input', renderLogs);
+    if (filterCategory) filterCategory.addEventListener('change', renderLogs);
+
+    if (clearLogsBtn) {
+      clearLogsBtn.addEventListener('click', () => {
+        if (confirm('保存されている送信ログを全件消去しますか？（※スプレッドシート側のデータは消えません）')) {
+          persistentLogs = [];
+          localStorage.removeItem('meyasubako_sent_logs');
+          renderLogs();
+          showToast('表示ログを消去しました', 'info');
+        }
+      });
     }
 
     function showToast(msg, type = 'info') {
@@ -913,6 +1084,7 @@ function getPresetsOutput() {
     }
 
     function escapeHtml(str) {
+      if (!str) return '';
       return str.replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
       });
