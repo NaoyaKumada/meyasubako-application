@@ -482,6 +482,20 @@ function getLogsOutput() {
     </div>
   </div>
 
+  <!-- Custom Confirmation Modal -->
+  <div id="customConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center shadow-2xl border border-slate-100 flex flex-col gap-3">
+      <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 mx-auto flex items-center justify-center text-xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <p id="customConfirmMessage" class="text-xs font-bold text-slate-800 leading-relaxed"></p>
+      <div class="flex gap-2 mt-2">
+        <button id="customConfirmCancelBtn" class="flex-1 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">キャンセル</button>
+        <button id="customConfirmOkBtn" class="flex-1 py-2 text-xs font-bold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition">実行する</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript Logic -->
   <script>
     // Default Presets
@@ -512,8 +526,8 @@ function getLogsOutput() {
     let recognition = null;
     let activeTextContent = '';
 
-    // Default GAS URL
-    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyKG4yMUp6O9UqGrnmWYmvTdk6E9X1VvcZkxcY-qLwp9b7Mlt0pshOwGDjqSVPDJaj4/exec';
+    // NEW DEFAULT GAS URL
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxN6oR1BHd3-ANJhISWEaBOz7pCJPI3j0259IZa_JMWwWPAgFmS1hOEw3xkqzNod7cP/exec';
 
     // DOM Elements
     const navTabPost = document.getElementById('navTabPost');
@@ -593,8 +607,12 @@ function getLogsOutput() {
       const savedName = localStorage.getItem('meyasubako_user_name');
       if (savedName && userNameInput) userNameInput.value = savedName;
 
-      // 2. Load GAS URL
-      const savedGasUrl = localStorage.getItem('meyasubako_gas_url') || DEFAULT_GAS_URL;
+      // 2. Load GAS URL (Ensure new URL is persisted)
+      let savedGasUrl = localStorage.getItem('meyasubako_gas_url');
+      if (!savedGasUrl || savedGasUrl.includes('AKfycbyKG4yMUp6O9UqGrnmWYmvTdk6E9X1VvcZkxcY-qLwp9b7Mlt0pshOwGDjqSVPDJaj4')) {
+        savedGasUrl = DEFAULT_GAS_URL;
+        localStorage.setItem('meyasubako_gas_url', DEFAULT_GAS_URL);
+      }
       if (gasUrlInput) gasUrlInput.value = savedGasUrl;
 
       // 3. Load Shared Presets
@@ -748,7 +766,6 @@ function getLogsOutput() {
       }
     }
 
-    // REALTIME LOG SYNC FROM SPREADSHEET (GAS)
     async function fetchLogsFromGAS() {
       const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
       if (!gasUrl) {
@@ -789,6 +806,29 @@ function getLogsOutput() {
       fetchLogsFromGasBtn.addEventListener('click', fetchLogsFromGAS);
     }
 
+    if (testGasConnectionBtn) {
+      testGasConnectionBtn.addEventListener('click', async () => {
+        const gasUrl = gasUrlInput ? gasUrlInput.value.trim() : '';
+        if (!gasUrl) {
+          showToast('GASのURLを入力してください', 'error');
+          return;
+        }
+        showToast('GASサーバーに接続テスト中...', 'info');
+        try {
+          const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getPresets';
+          const res = await fetch(fetchUrl);
+          const data = await res.json();
+          if (data && data.status === 'success') {
+            showToast('✅ GASとの連携接続に成功しました！', 'success');
+          } else {
+            showToast('接続応答がありましたが形式が異なります', 'info');
+          }
+        } catch (e) {
+          showToast('⚠️ CORSまたは接続エラー。GASのデプロイ設定(アクセス権:全員)を確認してください', 'error');
+        }
+      });
+    }
+
     if (addPresetBtn) {
       addPresetBtn.addEventListener('click', () => {
         const text = newPresetInput.value.trim();
@@ -809,10 +849,10 @@ function getLogsOutput() {
 
     if (resetPresetsBtn) {
       resetPresetsBtn.addEventListener('click', () => {
-        if (confirm('定型文を初期状態に戻しますか？')) {
+        showConfirm('定型文を初期状態に戻しますか？', () => {
           sharedPresets = [...defaultPresets];
           saveAndSyncPresets();
-        }
+        });
       });
     }
 
@@ -1062,12 +1102,12 @@ function getLogsOutput() {
 
     if (clearLogsBtn) {
       clearLogsBtn.addEventListener('click', () => {
-        if (confirm('保存されている送信ログを全件消去しますか？（※スプレッドシート側のデータは消えません）')) {
+        showConfirm('保存されている送信ログを全件消去しますか？（※スプレッドシート側のデータは消えません）', () => {
           persistentLogs = [];
           localStorage.removeItem('meyasubako_sent_logs');
           renderLogs();
           showToast('表示ログを消去しました', 'info');
-        }
+        });
       });
     }
 
@@ -1081,6 +1121,33 @@ function getLogsOutput() {
 
       statusToast.innerText = msg;
       setTimeout(() => { statusToast.classList.add('hidden'); }, 4000);
+    }
+
+    function showConfirm(message, onConfirm) {
+      const modal = document.getElementById('customConfirmModal');
+      const msgEl = document.getElementById('customConfirmMessage');
+      const okBtn = document.getElementById('customConfirmOkBtn');
+      const cancelBtn = document.getElementById('customConfirmCancelBtn');
+
+      if (!modal || !msgEl || !okBtn || !cancelBtn) return;
+
+      msgEl.innerText = message;
+      modal.classList.remove('hidden');
+
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      okBtn.onclick = () => {
+        cleanup();
+        onConfirm();
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+      };
     }
 
     function escapeHtml(str) {
@@ -1112,13 +1179,26 @@ function getLogsOutput() {
     const contentGas = document.getElementById('contentGas');
 
     function openModalTab(tab) {
-      [modalTabPwa, modalTabTrouble, modalTabSetup, modalTabGas].forEach(t => { if(t) t.className = 'pb-2 text-slate-400 hover:text-slate-600 font-bold whitespace-nowrap'; });
-      [contentPwa, contentTrouble, contentSetup, contentGas].forEach(c => { if(c) c.classList.add('hidden'); });
+      [modalTabPwa, modalTabTrouble, modalTabSetup, modalTabGas].forEach(t => { 
+        if(t) t.className = 'pb-2 text-slate-400 hover:text-slate-600 font-bold whitespace-nowrap'; 
+      });
+      [contentPwa, contentTrouble, contentSetup, contentGas].forEach(c => { 
+        if(c) c.classList.add('hidden'); 
+      });
 
-      if (tab === 'pwa' && modalTabPwa && contentPwa) { modalTabPwa.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentPwa.classList.remove('hidden'); }
-      if (tab === 'trouble' && modalTabTrouble && contentTrouble) { modalTabTrouble.className = 'pb-2 border-b-2 border-amber-500 text-amber-600 font-bold whitespace-nowrap'; contentTrouble.classList.remove('hidden'); }
-      if (tab === 'setup' && modalTabSetup && contentSetup) { modalTabSetup.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentSetup.classList.remove('hidden'); }
-      if (tab === 'gas' && modalTabGas && contentGas) { modalTabGas.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap'; contentGas.classList.remove('hidden'); }
+      if (tab === 'pwa' && modalTabPwa && contentPwa) {
+        modalTabPwa.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap';
+        contentPwa.classList.remove('hidden');
+      } else if (tab === 'trouble' && modalTabTrouble && contentTrouble) {
+        modalTabTrouble.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap';
+        contentTrouble.classList.remove('hidden');
+      } else if (tab === 'setup' && modalTabSetup && contentSetup) {
+        modalTabSetup.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap';
+        contentSetup.classList.remove('hidden');
+      } else if (tab === 'gas' && modalTabGas && contentGas) {
+        modalTabGas.className = 'pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold whitespace-nowrap';
+        contentGas.classList.remove('hidden');
+      }
     }
 
     if (modalTabPwa) modalTabPwa.addEventListener('click', () => openModalTab('pwa'));
