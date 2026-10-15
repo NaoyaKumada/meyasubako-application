@@ -113,17 +113,17 @@
             <span class="text-base">🚨</span>
             <span>困りごと</span>
           </button>
-          <button type="button" data-cat="アイデア・提案" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+          <button type="button" data-cat="提案" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
             <span class="text-base">💡</span>
             <span>提案</span>
           </button>
-          <button type="button" data-cat="連絡・メモ" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
+          <button type="button" data-cat="連絡" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
             <span class="text-base">📝</span>
             <span>連絡</span>
           </button>
           <button type="button" data-cat="未分類" class="cat-btn bg-slate-50 border border-slate-200 text-slate-600 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95">
             <span class="text-base">💬</span>
-            <span>その他</span>
+            <span>未分類</span>
           </button>
         </div>
       </div>
@@ -232,9 +232,9 @@
           <select id="filterCategory" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-600">
             <option value="ALL">全ての種類</option>
             <option value="困りごと">🚨 困りごと</option>
-            <option value="アイデア・提案">💡 提案</option>
-            <option value="連絡・メモ">📝 連絡</option>
-            <option value="未分類">💬 その他</option>
+            <option value="提案">💡 提案</option>
+            <option value="連絡">📝 連絡</option>
+            <option value="未分類">💬 未分類</option>
           </select>
         </div>
       </div>
@@ -251,9 +251,9 @@
           <table class="w-full text-left border-collapse table-fixed min-w-[320px]">
             <thead class="bg-slate-100 text-slate-600 border-b border-slate-200">
               <tr>
-                <th class="p-2 font-semibold w-[68px]">日時</th>
-                <th class="p-2 font-semibold w-[72px]">投稿者</th>
-                <th class="p-2 font-semibold w-[60px]">種類</th>
+                <th class="p-2 font-semibold w-[64px]">日時</th>
+                <th class="p-2 font-semibold w-[68px]">投稿者</th>
+                <th class="p-2 font-semibold w-[58px]">種類</th>
                 <th class="p-2 font-semibold">内容</th>
               </tr>
             </thead>
@@ -868,9 +868,9 @@ function getLogsOutput() {
         selectedCategory = btn.dataset.cat;
         if (selectedCategory === '困りごと') {
           btn.className = 'cat-btn active bg-rose-50 border-2 border-rose-500 text-rose-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
-        } else if (selectedCategory === 'アイデア・提案') {
+        } else if (selectedCategory === '提案') {
           btn.className = 'cat-btn active bg-amber-50 border-2 border-amber-500 text-amber-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
-        } else if (selectedCategory === '連絡・メモ') {
+        } else if (selectedCategory === '連絡') {
           btn.className = 'cat-btn active bg-blue-50 border-2 border-blue-500 text-blue-700 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
         } else {
           btn.className = 'cat-btn active bg-slate-200 border-2 border-slate-600 text-slate-800 py-2 rounded-xl font-bold text-xs flex flex-col items-center gap-0.5 transition active:scale-95';
@@ -1080,8 +1080,9 @@ function getLogsOutput() {
 
           let catBadgeClass = 'bg-slate-100 text-slate-700';
           if (log.category === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
-          if (log.category === 'アイデア・提案') catBadgeClass = 'bg-amber-100 text-amber-700';
-          if (log.category === '連絡・メモ') catBadgeClass = 'bg-blue-100 text-blue-700';
+          if (log.category === '提案') catBadgeClass = 'bg-amber-100 text-amber-700';
+          if (log.category === '連絡') catBadgeClass = 'bg-blue-100 text-blue-700';
+          if (log.category === '未分類') catBadgeClass = 'bg-slate-100 text-slate-700';
 
           tr.innerHTML = `
             <td class="p-2 text-[10px] text-slate-500 align-top">${escapeHtml(log.date)}</td>
@@ -1157,6 +1158,68 @@ function getLogsOutput() {
       });
     }
 
+    // カテゴリー名を統一形式に正規化する関数
+    function normalizeCategory(cat) {
+      if (!cat) return '未分類';
+      if (cat.includes('提案')) return '提案';
+      if (cat.includes('連絡')) return '連絡';
+      if (cat.includes('困り')) return '困りごと';
+      return cat;
+    }
+
+    function renderLogs() {
+      if (!sheetTableBody) return;
+
+      const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      const catFilter = filterCategory ? filterCategory.value : 'ALL';
+
+      const filtered = persistentLogs.filter(item => {
+        const cat = normalizeCategory(item.category);
+        const matchQuery = !query || 
+          item.person.toLowerCase().includes(query) || 
+          item.content.toLowerCase().includes(query) ||
+          cat.toLowerCase().includes(query);
+        
+        const matchCat = (catFilter === 'ALL') || (cat === catFilter);
+
+        return matchQuery && matchCat;
+      });
+
+      sheetTableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        sheetTableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="p-4 text-center text-slate-400 italic">該当する送信ログはありません</td>
+          </tr>
+        `;
+      } else {
+        filtered.forEach(log => {
+          const displayCat = normalizeCategory(log.category);
+          const tr = document.createElement('tr');
+          tr.className = 'bg-white hover:bg-slate-50 transition border-b border-slate-100';
+
+          let catBadgeClass = 'bg-slate-100 text-slate-700';
+          if (displayCat === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
+          if (displayCat === '提案') catBadgeClass = 'bg-amber-100 text-amber-700';
+          if (displayCat === '連絡') catBadgeClass = 'bg-blue-100 text-blue-700';
+          if (displayCat === '未分類') catBadgeClass = 'bg-slate-100 text-slate-700';
+
+          tr.innerHTML = `
+            <td class="p-2 text-[10px] text-slate-500 align-top whitespace-nowrap">${escapeHtml(log.date)}</td>
+            <td class="p-2 font-medium text-slate-800 align-top truncate" title="${escapeHtml(log.person)}">${escapeHtml(log.person)}</td>
+            <td class="p-2 align-top"><span class="${catBadgeClass} text-[9px] px-1 py-0.5 rounded font-bold whitespace-nowrap inline-block">${escapeHtml(displayCat)}</span></td>
+            <td class="p-2 text-slate-800 leading-relaxed align-top break-words">${escapeHtml(log.content)}</td>
+          `;
+          sheetTableBody.appendChild(tr);
+        });
+      }
+
+      if (sheetBadgeCount) sheetBadgeCount.innerText = persistentLogs.length;
+      if (rowCountText) rowCountText.innerText = filtered.length;
+    }
+
+    if (searchInput) searchInput.addEventListener('input', renderLogs);
     // Modal Events
     const toggleReadmeBtn = document.getElementById('toggleReadmeBtn');
     const togglePwaBtn = document.getElementById('togglePwaBtn');
