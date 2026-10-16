@@ -251,8 +251,8 @@
           <table class="w-full text-left border-collapse table-fixed min-w-[320px]">
             <thead class="bg-slate-100 text-slate-600 border-b border-slate-200">
               <tr>
-                <th class="p-2 font-semibold w-[64px]">日時</th>
-                <th class="p-2 font-semibold w-[68px]">投稿者</th>
+                <th class="p-2 font-semibold w-[60px]">日時</th>
+                <th class="p-2 font-semibold w-[72px]">投稿者</th>
                 <th class="p-2 font-semibold w-[58px]">種類</th>
                 <th class="p-2 font-semibold">内容</th>
               </tr>
@@ -526,7 +526,7 @@ function getLogsOutput() {
     let recognition = null;
     let activeTextContent = '';
 
-    // NEW DEFAULT GAS URL
+    // DEFAULT GAS URL
     const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxN6oR1BHd3-ANJhISWEaBOz7pCJPI3j0259IZa_JMWwWPAgFmS1hOEw3xkqzNod7cP/exec';
 
     // DOM Elements
@@ -607,7 +607,7 @@ function getLogsOutput() {
       const savedName = localStorage.getItem('meyasubako_user_name');
       if (savedName && userNameInput) userNameInput.value = savedName;
 
-      // 2. Load GAS URL (Ensure new URL is persisted)
+      // 2. Load GAS URL
       let savedGasUrl = localStorage.getItem('meyasubako_gas_url');
       if (!savedGasUrl || savedGasUrl.includes('AKfycbyKG4yMUp6O9UqGrnmWYmvTdk6E9X1VvcZkxcY-qLwp9b7Mlt0pshOwGDjqSVPDJaj4')) {
         savedGasUrl = DEFAULT_GAS_URL;
@@ -1048,6 +1048,15 @@ function getLogsOutput() {
       }, 600);
     }
 
+    // カテゴリー名を統一形式に正規化する関数
+    function normalizeCategory(cat) {
+      if (!cat) return '未分類';
+      if (cat.includes('提案')) return '提案';
+      if (cat.includes('連絡')) return '連絡';
+      if (cat.includes('困り')) return '困りごと';
+      return cat;
+    }
+
     function renderLogs() {
       if (!sheetTableBody) return;
 
@@ -1055,12 +1064,13 @@ function getLogsOutput() {
       const catFilter = filterCategory ? filterCategory.value : 'ALL';
 
       const filtered = persistentLogs.filter(item => {
+        const cat = normalizeCategory(item.category);
         const matchQuery = !query || 
           item.person.toLowerCase().includes(query) || 
           item.content.toLowerCase().includes(query) ||
-          item.category.toLowerCase().includes(query);
+          cat.toLowerCase().includes(query);
         
-        const matchCat = (catFilter === 'ALL') || (item.category === catFilter);
+        const matchCat = (catFilter === 'ALL') || (cat === catFilter);
 
         return matchQuery && matchCat;
       });
@@ -1075,19 +1085,20 @@ function getLogsOutput() {
         `;
       } else {
         filtered.forEach(log => {
+          const displayCat = normalizeCategory(log.category);
           const tr = document.createElement('tr');
           tr.className = 'bg-white hover:bg-slate-50 transition border-b border-slate-100';
 
           let catBadgeClass = 'bg-slate-100 text-slate-700';
-          if (log.category === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
-          if (log.category === '提案') catBadgeClass = 'bg-amber-100 text-amber-700';
-          if (log.category === '連絡') catBadgeClass = 'bg-blue-100 text-blue-700';
-          if (log.category === '未分類') catBadgeClass = 'bg-slate-100 text-slate-700';
+          if (displayCat === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
+          if (displayCat === '提案') catBadgeClass = 'bg-amber-100 text-amber-700';
+          if (displayCat === '連絡') catBadgeClass = 'bg-blue-100 text-blue-700';
+          if (displayCat === '未分類') catBadgeClass = 'bg-slate-100 text-slate-700';
 
           tr.innerHTML = `
-            <td class="p-2 text-[10px] text-slate-500 align-top">${escapeHtml(log.date)}</td>
-            <td class="p-2 font-medium text-slate-800 align-top truncate" title="${escapeHtml(log.person)}">${escapeHtml(log.person)}</td>
-            <td class="p-2 align-top"><span class="${catBadgeClass} text-[9px] px-1 py-0.5 rounded font-bold whitespace-nowrap inline-block">${escapeHtml(log.category)}</span></td>
+            <td class="p-2 text-[10px] text-slate-500 align-top whitespace-nowrap">${escapeHtml(log.date)}</td>
+            <td class="p-2 font-medium text-slate-800 align-top break-words">${escapeHtml(log.person)}</td>
+            <td class="p-2 align-top"><span class="${catBadgeClass} text-[9px] px-1 py-0.5 rounded font-bold whitespace-nowrap inline-block">${escapeHtml(displayCat)}</span></td>
             <td class="p-2 text-slate-800 leading-relaxed align-top break-words">${escapeHtml(log.content)}</td>
           `;
           sheetTableBody.appendChild(tr);
@@ -1158,68 +1169,6 @@ function getLogsOutput() {
       });
     }
 
-    // カテゴリー名を統一形式に正規化する関数
-    function normalizeCategory(cat) {
-      if (!cat) return '未分類';
-      if (cat.includes('提案')) return '提案';
-      if (cat.includes('連絡')) return '連絡';
-      if (cat.includes('困り')) return '困りごと';
-      return cat;
-    }
-
-    function renderLogs() {
-      if (!sheetTableBody) return;
-
-      const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-      const catFilter = filterCategory ? filterCategory.value : 'ALL';
-
-      const filtered = persistentLogs.filter(item => {
-        const cat = normalizeCategory(item.category);
-        const matchQuery = !query || 
-          item.person.toLowerCase().includes(query) || 
-          item.content.toLowerCase().includes(query) ||
-          cat.toLowerCase().includes(query);
-        
-        const matchCat = (catFilter === 'ALL') || (cat === catFilter);
-
-        return matchQuery && matchCat;
-      });
-
-      sheetTableBody.innerHTML = '';
-
-      if (filtered.length === 0) {
-        sheetTableBody.innerHTML = `
-          <tr>
-            <td colspan="4" class="p-4 text-center text-slate-400 italic">該当する送信ログはありません</td>
-          </tr>
-        `;
-      } else {
-        filtered.forEach(log => {
-          const displayCat = normalizeCategory(log.category);
-          const tr = document.createElement('tr');
-          tr.className = 'bg-white hover:bg-slate-50 transition border-b border-slate-100';
-
-          let catBadgeClass = 'bg-slate-100 text-slate-700';
-          if (displayCat === '困りごと') catBadgeClass = 'bg-rose-100 text-rose-700';
-          if (displayCat === '提案') catBadgeClass = 'bg-amber-100 text-amber-700';
-          if (displayCat === '連絡') catBadgeClass = 'bg-blue-100 text-blue-700';
-          if (displayCat === '未分類') catBadgeClass = 'bg-slate-100 text-slate-700';
-
-          tr.innerHTML = `
-            <td class="p-2 text-[10px] text-slate-500 align-top whitespace-nowrap">${escapeHtml(log.date)}</td>
-            <td class="p-2 font-medium text-slate-800 align-top truncate" title="${escapeHtml(log.person)}">${escapeHtml(log.person)}</td>
-            <td class="p-2 align-top"><span class="${catBadgeClass} text-[9px] px-1 py-0.5 rounded font-bold whitespace-nowrap inline-block">${escapeHtml(displayCat)}</span></td>
-            <td class="p-2 text-slate-800 leading-relaxed align-top break-words">${escapeHtml(log.content)}</td>
-          `;
-          sheetTableBody.appendChild(tr);
-        });
-      }
-
-      if (sheetBadgeCount) sheetBadgeCount.innerText = persistentLogs.length;
-      if (rowCountText) rowCountText.innerText = filtered.length;
-    }
-
-    if (searchInput) searchInput.addEventListener('input', renderLogs);
     // Modal Events
     const toggleReadmeBtn = document.getElementById('toggleReadmeBtn');
     const togglePwaBtn = document.getElementById('togglePwaBtn');
